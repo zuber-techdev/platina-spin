@@ -1,0 +1,5 @@
+{
+  "name": "BNI Platina Connect",
+  "description": "A spin wheel game to match BNI Platina chapter members for 1-to-1 meetings, featuring AI-generated conversation starters.",
+  "requestFramePermissions": []
+}
