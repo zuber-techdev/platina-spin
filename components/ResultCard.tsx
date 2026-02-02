@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Member } from '../types';
-import { generateIcebreakers } from '../services/geminiService';
-import { Sparkles, RefreshCcw, MessageSquare } from 'lucide-react';
+import { RefreshCcw, MessageCircle } from 'lucide-react';
 
 interface ResultCardProps {
   user: Member;
@@ -10,15 +9,25 @@ interface ResultCardProps {
 }
 
 const ResultCard: React.FC<ResultCardProps> = ({ user, matchedMember, onReset }) => {
-  const [insights, setInsights] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleGetInsights = async () => {
-    setLoading(true);
-    const result = await generateIcebreakers(user, matchedMember);
-    setInsights(result);
-    setLoading(false);
+  
+  // Helper to format phone number and generate WhatsApp URL
+  const getWhatsAppUrl = (phone: string, message: string) => {
+    // Remove non-numeric characters
+    let cleanPhone = phone.replace(/\D/g, '');
+    
+    // Assumption for India: If 10 digits, prepend 91.
+    // If >10 and starts with 0, remove 0 and prepend 91.
+    if (cleanPhone.length === 10) {
+      cleanPhone = '91' + cleanPhone;
+    } else if (cleanPhone.length > 10 && cleanPhone.startsWith('0')) {
+        cleanPhone = '91' + cleanPhone.substring(1);
+    }
+    
+    return `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
   };
+
+  const message = `Hi ${matchedMember.name}, I'm ${user.name} from ${user.company}. I matched with you on the BNI Platina Connector wheel! Let's schedule a 1-to-1 meeting.`;
+  const whatsappUrl = matchedMember.phone ? getWhatsAppUrl(matchedMember.phone, message) : null;
 
   return (
     <div className="w-full max-w-2xl mx-auto animate-fade-in-up">
@@ -26,7 +35,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ user, matchedMember, onReset })
         {/* Header */}
         <div className="bg-gradient-to-r from-red-600 to-red-800 p-8 text-white text-center">
           <h2 className="text-3xl font-bold mb-2">It's a Match!</h2>
-          <p className="opacity-90">Prepare for your 1-to-1 meeting</p>
+          <p className="opacity-90">Connect instantly on WhatsApp</p>
         </div>
 
         {/* Members Comparison */}
@@ -64,39 +73,26 @@ const ResultCard: React.FC<ResultCardProps> = ({ user, matchedMember, onReset })
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-3">
-             {!insights && (
-                <button
-                    onClick={handleGetInsights}
-                    disabled={loading}
-                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
+             {whatsappUrl ? (
+                <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md transform hover:scale-[1.02]"
                 >
-                    {loading ? (
-                        <>Generating...</>
-                    ) : (
-                        <>
-                            <Sparkles size={20} />
-                            Generate AI Conversation Starters
-                        </>
-                    )}
-                </button>
+                    <MessageCircle size={24} />
+                    Connect on WhatsApp
+                </a>
+             ) : (
+                 <div className="w-full py-4 bg-gray-100 text-gray-400 rounded-xl font-semibold flex items-center justify-center gap-2 cursor-not-allowed">
+                    <MessageCircle size={20} />
+                    Phone number not available
+                 </div>
              )}
-
-            {insights && (
-                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 mb-4 animate-fade-in">
-                    <div className="flex items-center gap-2 mb-4 text-indigo-800 font-bold border-b border-indigo-200 pb-2">
-                        <MessageSquare size={20} />
-                        <h3>AI Meeting Assistant</h3>
-                    </div>
-                    <div 
-                        className="prose prose-sm prose-indigo max-w-none text-gray-700"
-                        dangerouslySetInnerHTML={{ __html: insights }}
-                    />
-                </div>
-            )}
 
             <button
               onClick={onReset}
-              className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium flex items-center justify-center gap-2 transition-all"
+              className="w-full py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-medium flex items-center justify-center gap-2 transition-all mt-2"
             >
               <RefreshCcw size={18} />
               Spin Again

@@ -4,6 +4,7 @@ export interface Member {
   category: string;
   company: string;
   color: string;
+  phone?: string;
 }
 
 export interface SpinResult {
